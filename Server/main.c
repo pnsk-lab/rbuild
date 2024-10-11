@@ -42,6 +42,11 @@ int main(int argc, char** argv) {
 				printf("\tPlain : %s\n", rbs_plain_auth);
 				printf("\tPAM   : %s\n", rbs_pam_auth);
 				return 0;
+			} else if(strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+				printf("Usage: %s --config|-C config [--inetd|-i] [--dry-run|-d]\n", argv[0]);
+				printf("Usage: %s --version|-V\n", argv[0]);
+				printf("Usage: %s --help|-h\n", argv[0]);
+				return 0;
 			} else {
 				fprintf(stderr, "Unknown option: %s\n", argv[i]);
 				return 1;
