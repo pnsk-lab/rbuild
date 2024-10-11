@@ -5,9 +5,12 @@ PWD = `pwd`
 
 FLAGS = PWD=$(PWD) PLATFORM=$(PLATFORM)
 
-.PHONY: all ./Common ./Server ./Client clean format
+.PHONY: all get-version ./Common ./Server ./Client clean format
 
 all: ./Common ./Server ./Client
+
+get-version:
+	@grep "define RBUILD_VERSION" config.h | sed 's/#define RBUILD_VERSION //' | sed 's/"//g'
 
 ./Common::
 	$(MAKE) -C $@ $(FLAGS)
