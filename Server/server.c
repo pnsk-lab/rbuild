@@ -189,6 +189,7 @@ void rbs_server_handler(void* sockptr) {
 					break;
 				}
 				section = cm_strdup(arg);
+				rbs_write(sock, "SUCCESS\n", 8);
 			} else if(strcmp(cmd, "USER") == 0 && arg != NULL) {
 				if(section == NULL || user != NULL) {
 					rbs_write(sock, "FAIL\n", 5);
@@ -196,6 +197,7 @@ void rbs_server_handler(void* sockptr) {
 					break;
 				}
 				user = cm_strdup(arg);
+				rbs_write(sock, "SUCCESS\n", 8);
 			} else if(strcmp(cmd, "PASS") == 0 && arg != NULL) {
 				if(user == NULL || pass != NULL) {
 					rbs_write(sock, "FAIL\n", 5);
@@ -222,6 +224,7 @@ void rbs_server_handler(void* sockptr) {
 					break;
 				}
 			} else {
+				rbs_write(sock, "FAIL\n", 5);
 				free(line);
 				break;
 			}
