@@ -19,6 +19,6 @@ all: ./Common ./Server ./Client
 	$(MAKE) -C $@ $(FLAGS)
 
 clean:
-	$(MAKE) -C ./Common clean
-	$(MAKE) -C ./Server clean
-	$(MAKE) -C ./Client clean
+	$(MAKE) -C ./Common clean $(FLAGS)
+	$(MAKE) -C ./Server clean $(FLAGS)
+	$(MAKE) -C ./Client clean $(FLAGS)
