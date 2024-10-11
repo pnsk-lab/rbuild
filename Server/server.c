@@ -214,6 +214,8 @@ void rbs_server_handler(void* sockptr) {
 			} else if(strcmp(cmd, "CC") == 0 && arg != NULL && authed) {
 				if(rbs_task(sock, section, cmd, arg)) {
 					rbs_write(sock, "SUCCESS\n", 8);
+					free(line);
+					break;
 				} else {
 					rbs_write(sock, "FAIL\n", 5);
 					free(line);

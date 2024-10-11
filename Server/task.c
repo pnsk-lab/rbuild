@@ -69,9 +69,6 @@ char** rbs_parse_args(const char* cmd, const char* arg) {
 		}
 	}
 	free(str);
-	for(i = 0; stack[i] != NULL; i++) {
-		printf("[%s]\n", stack[i]);
-	}
 	return stack;
 }
 
@@ -105,6 +102,7 @@ CMBOOL rbs_wait_process(int sock) {
 		int len = read(outpipe[0], &c, 1);
 		if(len <= 0) break;
 		if(c == '\n') {
+			if(oldc == '\n') rbs_write(sock, "+", 1);
 			rbs_write(sock, "\n", 1);
 		} else {
 			if(oldc == '\n') rbs_write(sock, "+", 1);
