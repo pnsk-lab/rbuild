@@ -43,10 +43,11 @@ char** rbs_parse_args(const char* cmd, const char* arg) {
 	char** stack = malloc(sizeof(*stack));
 	int i;
 	int incr = 0;
+	CMBOOL dq = CMFALSE;
 	stack[0] = NULL;
 	rbs_push(&stack, cmd);
 	for(i = 0;; i++) {
-		if(str[i] == 0 || str[i] == ' ') {
+		if(str[i] == 0 || (str[i] == ' ' && !dq)) {
 			char oldc = str[i];
 			char* got = str + incr;
 			str[i] = 0;
@@ -66,6 +67,19 @@ char** rbs_parse_args(const char* cmd, const char* arg) {
 
 			incr = i + 1;
 			if(oldc == 0) break;
+		} else if(str[i] == '"') {
+			int oldi = i;
+			dq = !dq;
+			for(; str[i] != 0; i++) {
+				str[i] = str[i + 1];
+			}
+			i = oldi - 1;
+		} else if(str[i] == '\\') {
+			int oldi = i;
+			for(; str[i] != 0; i++) {
+				str[i] = str[i + 1];
+			}
+			i = oldi;
 		}
 	}
 	free(str);
