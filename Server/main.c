@@ -15,7 +15,7 @@ int main(int argc, char** argv){
 		if(argv[i][0] == '-'){
 			if(strcmp(argv[i], "--inetd") == 0 || strcmp(argv[i], "-i") == 0){
 				run_inetd = CMTRUE;
-			}else if(strcmp(argv[i], "--auth") == 0 || strcmp(argv[i], "-a") == 0){
+			}else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-C") == 0){
 				i++;
 				if(argv[i] == NULL){
 					fprintf(stderr, "Missing argument\n");
