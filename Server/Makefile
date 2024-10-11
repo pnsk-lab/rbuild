@@ -5,7 +5,7 @@ include $(PWD)/Platform/$(PLATFORM).mk
 .PHONY: all clean
 .SUFFIXES: .c .o
 
-OBJS = main.o server.o auth.o config.o
+OBJS = main.o server.o auth.o config.o task.o
 OBJS += ../Common/common.a
 
 all: rbuild-server$(EXEC)

@@ -3,8 +3,10 @@
 #include "../config.h"
 
 #include "rbs_server.h"
+
 #include "rbs_config.h"
 #include "rbs_auth.h"
+#include "rbs_task.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,12 +74,21 @@ CMBOOL rbs_server_init(void) {
 	}
 }
 
-void rbs_write(int sock, unsigned char* data, unsigned int size) {
+int rbs_write(int sock, unsigned char* data, unsigned int size) {
 	if(run_inetd) {
-		fwrite(data, 1, size, stdout);
+		int n = fwrite(data, 1, size, stdout);
 		fflush(stdout);
+		return n;
 	} else {
-		send(sock, data, size, 0);
+		return send(sock, data, size, 0);
+	}
+}
+
+int rbs_read(int sock, unsigned char* data, unsigned int size) {
+	if(run_inetd) {
+		return fread(data, 1, size, stdin);
+	} else {
+		return recv(sock, data, size, 0);
 	}
 }
 
@@ -193,6 +204,12 @@ void rbs_server_handler(void* sockptr) {
 					rbs_write(sock, "SUCCESS\n", 8);
 					authed = CMTRUE;
 				} else {
+					rbs_write(sock, "FAIL\n", 5);
+					free(line);
+					break;
+				}
+			} else if(strcmp(cmd, "CC") == 0 && arg != NULL && authed) {
+				if(!rbs_task(sock, section, cmd, arg)) {
 					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
