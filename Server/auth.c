@@ -106,6 +106,11 @@ CMBOOL rbs_auth(const char* section, const char* username, const char* password)
 		state = rbs_auth_pam(username, password);
 	}else
 #endif
+#ifdef HAS_PLAIN_AUTH
+	if(strcmp(auth, "plain") == 0 && arg != NULL){
+		state = rbs_auth_plain(arg, username, password);
+	}else
+#endif
 	if(1){
 		free(auth);
 		return CMFALSE;
