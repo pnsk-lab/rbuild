@@ -1,1 +1,3 @@
 Remote builder. Useful for cross-compiling, just to reduce your resource usage, etc.
+
+You probably want to copy PAM/rbuild to /etc/pam.d to get PAM authentication working.

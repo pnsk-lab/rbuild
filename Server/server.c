@@ -3,6 +3,7 @@
 #include "../config.h"
 
 #include "rbs_server.h"
+#include "rbs_config.h"
 #include "rbs_auth.h"
 
 #include <stdlib.h>
@@ -32,6 +33,7 @@ int server_socket;
 int port = 7980;
 
 CMBOOL rbs_server_init(void){
+	ready = cm_strdup(RBUILD_VERSION);
 	if(run_inetd){
 		return CMTRUE;
 	}else{
@@ -87,8 +89,46 @@ void rbs_close(int sock){
 #endif
 }
 
+char* rbs_readline(int sock){
+	char cbuf[2];
+	char* line;
+	cbuf[1] = 0;
+	line = cm_strdup("");
+	do{
+		fd_set rfds;
+		struct timeval tv;
+		int ret;
+
+		FD_ZERO(&rfds);
+		FD_SET(sock, &rfds);
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+
+		ret = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
+		if(ret <= 0){
+			free(line);
+			return NULL;
+		}
+		if(run_inetd){
+			fread(cbuf, 1, 1, stdin);
+		}else{
+			recv(sock, cbuf, 1, 0);
+		}
+		if(cbuf[0] != '\n' && cbuf[0] != '\r'){
+			char* tmp = line;
+			line = cm_strcat(tmp, cbuf);
+			free(tmp);
+		}
+	}while(cbuf[0] != '\n');
+	return line;
+}
+
 void rbs_server_handler(void* sockptr){
-	int sock = -1;
+	int sock = 0;
+	char* user = NULL;
+	char* pass = NULL;
+	char* section = NULL;
+	CMBOOL authed = CMFALSE;
 	if(sockptr != NULL){
 		sock = *(int*)sockptr;
 		free(sockptr);
@@ -107,14 +147,61 @@ void rbs_server_handler(void* sockptr){
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
 
-		ret = select(1, &rfds, NULL, NULL, &tv);
+		ret = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
 
 		if(ret < 0){
 			break;
 		}else if(ret == 0){
-			rbs_write(sock, "TIMEOUT\n", 8);
 			break;
 		}else{
+			char* line = rbs_readline(sock);
+			int i;
+			char* arg = NULL;
+			char* cmd = line;
+			if(line == NULL){
+				break;
+			}
+			for(i = 0; line[i] != 0; i++){
+				if(line[i] == ' '){
+					line[i] = 0;
+					arg = line + i + 1;
+					break;
+				}
+			}
+			if(strcmp(cmd, "QUIT") == 0){
+				free(line);
+				break;
+			}else if(strcmp(cmd, "SECTION") == 0 && arg != NULL){
+				if(strcmp(rbs_config_get(arg, "auth"), "") == 0 || section != NULL){
+					free(line);
+					break;
+				}
+				section = cm_strdup(arg);
+			}else if(strcmp(cmd, "USER") == 0 && arg != NULL){
+				if(section == NULL || user != NULL){
+					free(line);
+					break;
+				}
+				user = cm_strdup(arg);
+			}else if(strcmp(cmd, "PASS") == 0 && arg != NULL){
+				if(user == NULL || pass != NULL){
+					free(line);
+					break;
+				}
+				pass = cm_strdup(arg);
+				if(rbs_auth(section, user, pass)){
+					rbs_write(sock, "SUCCESS\n", 8);
+					authed = CMTRUE;
+				}else{
+					rbs_write(sock, "FAIL\n", 5);
+					free(line);
+					break;
+				}
+			}else{
+				free(line);
+				break;
+			}
+			free(line);
 		}
 	}
 
@@ -126,9 +213,9 @@ void rbs_server_handler(void* sockptr){
 
 CMBOOL rbs_server_loop(void){
 	if(run_inetd){
+		setvbuf(stdin, NULL, _IONBF, 0);
 		rbs_server_handler(NULL);
 	}else{
-		ready = cm_strdup(RBUILD_VERSION);
 #ifndef WINSOCK
 		signal(SIGCHLD, SIG_IGN);
 #endif
