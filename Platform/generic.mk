@@ -2,7 +2,7 @@
 
 CC = cc
 AR = ar
-CFLAGS = -I $(PWD)/Common
+CFLAGS = -I $(PWD)/Common -DHAS_PLAIN_AUTH -DHAS_NONE_AUTH
 LDFLAGS =
 LIBS =
 EXEC =

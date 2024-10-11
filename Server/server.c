@@ -1,6 +1,9 @@
 /* $Id$ */
 
+#include "../config.h"
+
 #include "rbs_server.h"
+#include "rbs_auth.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,10 +20,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/select.h>
 #endif
 
+#include <cm_string.h>
 #include <cm_bool.h>
 
+char* ready;
 CMBOOL run_inetd = CMFALSE;
 int server_socket;
 int port = 7980;
@@ -87,7 +93,30 @@ void rbs_server_handler(void* sockptr){
 		sock = *(int*)sockptr;
 		free(sockptr);
 	}
-	rbs_write(sock, "Hello\n", 6);
+	rbs_write(sock, "READY ", 6);
+	rbs_write(sock, ready, strlen(ready));
+	rbs_write(sock, "\n", 1);
+
+	while(1){
+		fd_set rfds;
+		struct timeval tv;
+		int ret;
+
+		FD_ZERO(&rfds);
+		FD_SET(sock, &rfds);
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+
+		ret = select(1, &rfds, NULL, NULL, &tv);
+
+		if(ret < 0){
+			break;
+		}else if(ret == 0){
+			rbs_write(sock, "TIMEOUT\n", 8);
+			break;
+		}else{
+		}
+	}
 
 	rbs_close(sock);
 #ifdef WINSOCK
@@ -99,6 +128,7 @@ CMBOOL rbs_server_loop(void){
 	if(run_inetd){
 		rbs_server_handler(NULL);
 	}else{
+		ready = cm_strdup(RBUILD_VERSION);
 #ifndef WINSOCK
 		signal(SIGCHLD, SIG_IGN);
 #endif
