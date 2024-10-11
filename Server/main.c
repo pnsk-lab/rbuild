@@ -18,23 +18,23 @@ extern const char* rbs_crypt_auth;
 extern const char* rbs_plain_auth;
 extern const char* rbs_pam_auth;
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
 	int i;
 	CMBOOL dryrun = CMFALSE;
-	for(i = 1; i < argc; i++){
-		if(argv[i][0] == '-'){
-			if(strcmp(argv[i], "--inetd") == 0 || strcmp(argv[i], "-i") == 0){
+	for(i = 1; i < argc; i++) {
+		if(argv[i][0] == '-') {
+			if(strcmp(argv[i], "--inetd") == 0 || strcmp(argv[i], "-i") == 0) {
 				run_inetd = CMTRUE;
-			}else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-C") == 0){
+			} else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-C") == 0) {
 				i++;
-				if(argv[i] == NULL){
+				if(argv[i] == NULL) {
 					fprintf(stderr, "Missing argument\n");
 					return 1;
 				}
 				rbs_config = argv[i];
-			}else if(strcmp(argv[i], "--dry-run") == 0 || strcmp(argv[i], "-d") == 0){
+			} else if(strcmp(argv[i], "--dry-run") == 0 || strcmp(argv[i], "-d") == 0) {
 				dryrun = CMTRUE;
-			}else if(strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-V") == 0){
+			} else if(strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-V") == 0) {
 				printf("rbuild-server version %s\n", RBUILD_VERSION);
 				printf("Authentication methods:\n");
 				printf("\tNone  : %s\n", rbs_none_auth);
@@ -42,28 +42,28 @@ int main(int argc, char** argv){
 				printf("\tPlain : %s\n", rbs_plain_auth);
 				printf("\tPAM   : %s\n", rbs_pam_auth);
 				return 0;
-			}else{
+			} else {
 				fprintf(stderr, "Unknown option: %s\n", argv[i]);
 				return 1;
 			}
-		}else{
+		} else {
 		}
 	}
-	if(rbs_config == NULL){
+	if(rbs_config == NULL) {
 		fprintf(stderr, "Config is required\n");
 		return 1;
 	}
 	rbs_config_init();
-	if(!rbs_config_parse()){
+	if(!rbs_config_parse()) {
 		fprintf(stderr, "Failed to parse config\n");
 		return 1;
 	}
 	if(dryrun) return 0;
-	if(!rbs_server_init()){
+	if(!rbs_server_init()) {
 		fprintf(stderr, "Failed to initialize\n");
 		return 1;
 	}
-	if(!rbs_server_loop()){
+	if(!rbs_server_loop()) {
 		return 1;
 	}
 	return 0;

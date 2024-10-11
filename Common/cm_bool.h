@@ -5,7 +5,7 @@
 
 typedef unsigned char CMBOOL;
 
-#define CMTRUE	1
+#define CMTRUE 1
 #define CMFALSE 0
 
 #endif

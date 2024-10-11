@@ -1,4 +1,3 @@
 /* $Id$ */
 
-int main(){
-}
+int main() {}

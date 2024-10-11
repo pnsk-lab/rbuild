@@ -32,11 +32,11 @@ CMBOOL run_inetd = CMFALSE;
 int server_socket;
 int port = 7980;
 
-CMBOOL rbs_server_init(void){
+CMBOOL rbs_server_init(void) {
 	ready = cm_strdup(RBUILD_VERSION);
-	if(run_inetd){
+	if(run_inetd) {
 		return CMTRUE;
-	}else{
+	} else {
 		struct sockaddr_in server_address;
 		int yes = 1;
 #ifdef WINSOCK
@@ -49,7 +49,7 @@ CMBOOL rbs_server_init(void){
 #else
 		if(server_socket < 0) return CMFALSE;
 #endif
-		if(setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0){
+		if(setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
 			close(server_socket);
 			return CMFALSE;
 		}
@@ -57,12 +57,12 @@ CMBOOL rbs_server_init(void){
 		server_address.sin_family = AF_INET;
 		server_address.sin_addr.s_addr = INADDR_ANY;
 		server_address.sin_port = htons(port);
-		if(bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
+		if(bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 			close(server_socket);
 			fprintf(stderr, "Bind fail\n");
 			return CMFALSE;
 		}
-		if(listen(server_socket, 128) < 0){
+		if(listen(server_socket, 128) < 0) {
 			close(server_socket);
 			fprintf(stderr, "Listen fail\n");
 			return CMFALSE;
@@ -72,16 +72,16 @@ CMBOOL rbs_server_init(void){
 	}
 }
 
-void rbs_write(int sock, unsigned char* data, unsigned int size){
-	if(run_inetd){
+void rbs_write(int sock, unsigned char* data, unsigned int size) {
+	if(run_inetd) {
 		fwrite(data, 1, size, stdout);
 		fflush(stdout);
-	}else{
+	} else {
 		send(sock, data, size, 0);
 	}
 }
 
-void rbs_close(int sock){
+void rbs_close(int sock) {
 #ifdef WINSOCK
 	closesocket(sock);
 #else
@@ -89,12 +89,12 @@ void rbs_close(int sock){
 #endif
 }
 
-char* rbs_readline(int sock){
+char* rbs_readline(int sock) {
 	char cbuf[2];
 	char* line;
 	cbuf[1] = 0;
 	line = cm_strdup("");
-	do{
+	do {
 		fd_set rfds;
 		struct timeval tv;
 		int ret;
@@ -105,31 +105,31 @@ char* rbs_readline(int sock){
 		tv.tv_usec = 0;
 
 		ret = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
-		if(ret <= 0){
+		if(ret <= 0) {
 			free(line);
 			return NULL;
 		}
-		if(run_inetd){
+		if(run_inetd) {
 			fread(cbuf, 1, 1, stdin);
-		}else{
+		} else {
 			recv(sock, cbuf, 1, 0);
 		}
-		if(cbuf[0] != '\n' && cbuf[0] != '\r'){
+		if(cbuf[0] != '\n' && cbuf[0] != '\r') {
 			char* tmp = line;
 			line = cm_strcat(tmp, cbuf);
 			free(tmp);
 		}
-	}while(cbuf[0] != '\n');
+	} while(cbuf[0] != '\n');
 	return line;
 }
 
-void rbs_server_handler(void* sockptr){
+void rbs_server_handler(void* sockptr) {
 	int sock = 0;
 	char* user = NULL;
 	char* pass = NULL;
 	char* section = NULL;
 	CMBOOL authed = CMFALSE;
-	if(sockptr != NULL){
+	if(sockptr != NULL) {
 		sock = *(int*)sockptr;
 		free(sockptr);
 	}
@@ -137,7 +137,7 @@ void rbs_server_handler(void* sockptr){
 	rbs_write(sock, ready, strlen(ready));
 	rbs_write(sock, "\n", 1);
 
-	while(1){
+	while(1) {
 		fd_set rfds;
 		struct timeval tv;
 		int ret;
@@ -149,55 +149,55 @@ void rbs_server_handler(void* sockptr){
 
 		ret = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
 
-		if(ret < 0){
+		if(ret < 0) {
 			break;
-		}else if(ret == 0){
+		} else if(ret == 0) {
 			break;
-		}else{
+		} else {
 			char* line = rbs_readline(sock);
 			int i;
 			char* arg = NULL;
 			char* cmd = line;
-			if(line == NULL){
+			if(line == NULL) {
 				break;
 			}
-			for(i = 0; line[i] != 0; i++){
-				if(line[i] == ' '){
+			for(i = 0; line[i] != 0; i++) {
+				if(line[i] == ' ') {
 					line[i] = 0;
 					arg = line + i + 1;
 					break;
 				}
 			}
-			if(strcmp(cmd, "QUIT") == 0){
+			if(strcmp(cmd, "QUIT") == 0) {
 				free(line);
 				break;
-			}else if(strcmp(cmd, "SECTION") == 0 && arg != NULL){
-				if(strcmp(rbs_config_get(arg, "auth"), "") == 0 || section != NULL){
+			} else if(strcmp(cmd, "SECTION") == 0 && arg != NULL) {
+				if(strcmp(rbs_config_get(arg, "auth"), "") == 0 || section != NULL) {
 					free(line);
 					break;
 				}
 				section = cm_strdup(arg);
-			}else if(strcmp(cmd, "USER") == 0 && arg != NULL){
-				if(section == NULL || user != NULL){
+			} else if(strcmp(cmd, "USER") == 0 && arg != NULL) {
+				if(section == NULL || user != NULL) {
 					free(line);
 					break;
 				}
 				user = cm_strdup(arg);
-			}else if(strcmp(cmd, "PASS") == 0 && arg != NULL){
-				if(user == NULL || pass != NULL){
+			} else if(strcmp(cmd, "PASS") == 0 && arg != NULL) {
+				if(user == NULL || pass != NULL) {
 					free(line);
 					break;
 				}
 				pass = cm_strdup(arg);
-				if(rbs_auth(section, user, pass)){
+				if(rbs_auth(section, user, pass)) {
 					rbs_write(sock, "SUCCESS\n", 8);
 					authed = CMTRUE;
-				}else{
+				} else {
 					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
 				}
-			}else{
+			} else {
 				free(line);
 				break;
 			}
@@ -211,15 +211,15 @@ void rbs_server_handler(void* sockptr){
 #endif
 }
 
-CMBOOL rbs_server_loop(void){
-	if(run_inetd){
+CMBOOL rbs_server_loop(void) {
+	if(run_inetd) {
 		setvbuf(stdin, NULL, _IONBF, 0);
 		rbs_server_handler(NULL);
-	}else{
+	} else {
 #ifndef WINSOCK
 		signal(SIGCHLD, SIG_IGN);
 #endif
-		while(1){
+		while(1) {
 			struct sockaddr_in claddr;
 			int clen = sizeof(claddr);
 			int sock = accept(server_socket, (struct sockaddr*)&claddr, &clen);
@@ -229,12 +229,12 @@ CMBOOL rbs_server_loop(void){
 			_beginthread(rbs_server_handler, 0, sockptr);
 #else
 			pid_t p = fork();
-			if(p == 0){
+			if(p == 0) {
 				int* sockptr = malloc(sizeof(*sockptr));
 				*sockptr = sock;
 				rbs_server_handler(sockptr);
 				_exit(0);
-			}else{
+			} else {
 				rbs_close(sock);
 			}
 #endif
