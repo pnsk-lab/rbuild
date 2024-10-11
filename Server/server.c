@@ -184,18 +184,21 @@ void rbs_server_handler(void* sockptr) {
 				break;
 			} else if(strcmp(cmd, "SECTION") == 0 && arg != NULL) {
 				if(strcmp(rbs_config_get(arg, "auth"), "") == 0 || section != NULL) {
+					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
 				}
 				section = cm_strdup(arg);
 			} else if(strcmp(cmd, "USER") == 0 && arg != NULL) {
 				if(section == NULL || user != NULL) {
+					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
 				}
 				user = cm_strdup(arg);
 			} else if(strcmp(cmd, "PASS") == 0 && arg != NULL) {
 				if(user == NULL || pass != NULL) {
+					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
 				}
@@ -209,7 +212,9 @@ void rbs_server_handler(void* sockptr) {
 					break;
 				}
 			} else if(strcmp(cmd, "CC") == 0 && arg != NULL && authed) {
-				if(!rbs_task(sock, section, cmd, arg)) {
+				if(rbs_task(sock, section, cmd, arg)) {
+					rbs_write(sock, "SUCCESS\n", 8);
+				} else {
 					rbs_write(sock, "FAIL\n", 5);
 					free(line);
 					break;
@@ -221,6 +226,8 @@ void rbs_server_handler(void* sockptr) {
 			free(line);
 		}
 	}
+
+	rbs_write(sock, "BYE\n", 4);
 
 	rbs_close(sock);
 #ifdef WINSOCK
@@ -249,6 +256,9 @@ CMBOOL rbs_server_loop(void) {
 			if(p == 0) {
 				int* sockptr = malloc(sizeof(*sockptr));
 				*sockptr = sock;
+#ifndef WINSOCK
+				signal(SIGCHLD, SIG_DFL);
+#endif
 				rbs_server_handler(sockptr);
 				_exit(0);
 			} else {
