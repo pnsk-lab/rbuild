@@ -1,3 +1,8 @@
-Remote builder. Useful for cross-compiling, just to reduce your resource usage, etc.
+rbuild - Remote Builder
+
+rbuild provides:
+ - Glue between GCC/Binutils flags and other stuff's flags
+ - Building files remotely, with headers from remote server.
+   So note, this is not an another distcc.
 
 You probably want to copy PAM/rbuild to /etc/pam.d to get PAM authentication working.
