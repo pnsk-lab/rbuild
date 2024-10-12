@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <cm_bool.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -26,22 +26,22 @@ char* cm_strcat3(const char* a, const char* b, const char* c) {
 
 char* cm_strdup(const char* str) { return cm_strcat(str, ""); }
 
-bool cm_endswith(const char* str, const char* end) {
+CMBOOL cm_endswith(const char* str, const char* end) {
 	int i;
-	if(strlen(str) < strlen(end)) return false;
+	if(strlen(str) < strlen(end)) return CMFALSE;
 	for(i = strlen(str) - strlen(end); i < strlen(str); i++) {
-		if(str[i] != end[i - strlen(str) + strlen(end)]) return false;
+		if(str[i] != end[i - strlen(str) + strlen(end)]) return CMFALSE;
 	}
-	return true;
+	return CMTRUE;
 }
 
-bool cm_nocase_endswith(const char* str, const char* end) {
+CMBOOL cm_nocase_endswith(const char* str, const char* end) {
 	int i;
-	if(strlen(str) < strlen(end)) return false;
+	if(strlen(str) < strlen(end)) return CMFALSE;
 	for(i = strlen(str) - strlen(end); i < strlen(str); i++) {
-		if(tolower(str[i]) != tolower(end[i - strlen(str) + strlen(end)])) return false;
+		if(tolower(str[i]) != tolower(end[i - strlen(str) + strlen(end)])) return CMFALSE;
 	}
-	return true;
+	return CMTRUE;
 }
 
 char* cm_trimstart(const char* str) {
@@ -78,17 +78,17 @@ char** cm_split(const char* str, const char* by) {
 	char** r = malloc(sizeof(*r));
 	char* b = malloc(1);
 	char cbuf[2];
-	bool dq = false;
-	bool sq = false;
+	CMBOOL dq = CMFALSE;
+	CMBOOL sq = CMFALSE;
 	r[0] = NULL;
 	b[0] = 0;
 	cbuf[1] = 0;
 	for(i = 0;; i++) {
 		int j;
-		bool has = false;
+		CMBOOL has = CMFALSE;
 		for(j = 0; by[j] != 0; j++) {
 			if(by[j] == str[i]) {
-				has = true;
+				has = CMTRUE;
 				break;
 			}
 		}
@@ -124,15 +124,15 @@ char** cm_split(const char* str, const char* by) {
 	return r;
 }
 
-bool cm_strcaseequ(const char* a, const char* b) {
+CMBOOL cm_strcaseequ(const char* a, const char* b) {
 	int i;
-	if(a == NULL) return false;
-	if(b == NULL) return false;
-	if(strlen(a) != strlen(b)) return false;
+	if(a == NULL) return CMFALSE;
+	if(b == NULL) return CMFALSE;
+	if(strlen(a) != strlen(b)) return CMFALSE;
 	for(i = 0; a[i] != 0; i++) {
-		if(tolower(a[i]) != tolower(b[i])) return false;
+		if(tolower(a[i]) != tolower(b[i])) return CMFALSE;
 	}
-	return true;
+	return CMTRUE;
 }
 
 int cm_hex(const char* str, int len) {
