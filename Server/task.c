@@ -132,11 +132,26 @@ CMBOOL rbs_wait_process(int sock) {
 }
 #endif
 
+char* rbs_get_program(const char* section, const char* cmd) {
+	char* type = rbs_config_get(section, "type");
+	if(strcmp(type, "gnu") == 0) {
+		char* prefix = rbs_config_get(section, "prefix");
+		if(strcmp(cmd, "CC") == 0) {
+			return cm_strcat(prefix, "gcc");
+		} else if(strcmp(cmd, "LD") == 0) {
+			return cm_strcat(prefix, "ld");
+		}
+	}
+	return cm_strdup("");
+}
+
 CMBOOL rbs_task(int sock, const char* section, const char* cmd, const char* arg) {
-	char** args = rbs_parse_args("gcc", arg);
-	CMBOOL status = rbs_start_process("gcc", args);
+	char* program = rbs_get_program(section, cmd);
+	char** args = rbs_parse_args(program, arg);
+	CMBOOL status = rbs_start_process(program, args);
 	rbs_stack_free(args);
 	if(!status) return CMFALSE;
 	rbs_write(sock, "SUCCESS\n", 8);
+	free(program);
 	return rbs_wait_process(sock);
 }

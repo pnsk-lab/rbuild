@@ -171,6 +171,7 @@ void rbs_server_handler(void* sockptr) {
 			int i;
 			char* arg = NULL;
 			char* cmd = line;
+			CMBOOL tool = CMFALSE;
 			if(line == NULL) {
 				break;
 			}
@@ -181,6 +182,8 @@ void rbs_server_handler(void* sockptr) {
 					break;
 				}
 			}
+			tool = tool || strcmp(cmd, "CC") == 0;
+			tool = tool || strcmp(cmd, "LD") == 0;
 			if(strcmp(cmd, "QUIT") == 0) {
 				free(line);
 				break;
@@ -215,7 +218,7 @@ void rbs_server_handler(void* sockptr) {
 					free(line);
 					break;
 				}
-			} else if(strcmp(cmd, "CC") == 0 && arg != NULL && authed) {
+			} else if(tool && arg != NULL && authed) {
 				if(rbs_task(sock, section, cmd, arg)) {
 					rbs_write(sock, "SUCCESS\n", 8);
 					free(line);
