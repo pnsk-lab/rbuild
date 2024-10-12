@@ -170,7 +170,7 @@ char** rbs_translate_args(const char* section, const char* cmd, char** args, int
 				rbs_push(&r, args[i]);
 				rbs_push(&r, args[i + 1]);
 				i++;
-			} else if(strcmp(args[i], "-c") == 0 || strcmp(args[i], "-fPIC") == 0 || strcmp(args[i], "-shared") == 0) {
+			} else if(strcmp(args[i], "-c") == 0 || strcmp(args[i], "-fcommon") == 0 || strcmp(args[i], "-fno-common") == 0 || strcmp(args[i], "-fPIC") == 0 || strcmp(args[i], "-shared") == 0) {
 				rbs_push(&r, args[i]);
 			} else if(args[i][0] != '-') {
 				/* file input */
