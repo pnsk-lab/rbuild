@@ -164,8 +164,16 @@ int main(int argc, char** argv) {
 					send(sock, "CC", 2, 0);
 				}
 				for(j = start; j < argc; j++) {
-					send(sock, " ", 1, 0);
-					send(sock, argv[j], strlen(argv[j]), 0);
+					int k;
+					send(sock, " \"", 2, 0);
+					for(k = 0; argv[j][k] != 0; k++){
+						if(argv[j][k] == '"'){
+							send(sock, "\\\"", 2, 0);
+						}else{
+							send(sock, argv[j] + k, 1, 0);
+						}
+					}
+					send(sock, "\"", 1, 0);
 				}
 				send(sock, "\n", 1, 0);
 				phase++;
