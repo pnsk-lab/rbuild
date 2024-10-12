@@ -184,6 +184,9 @@ void rbs_server_handler(void* sockptr) {
 			}
 			tool = tool || strcmp(cmd, "CC") == 0;
 			tool = tool || strcmp(cmd, "LD") == 0;
+			tool = tool || strcmp(cmd, "AS") == 0;
+			tool = tool || strcmp(cmd, "AR") == 0;
+			tool = tool || strcmp(cmd, "CXX") == 0;
 			if(strcmp(cmd, "QUIT") == 0) {
 				free(line);
 				break;

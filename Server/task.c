@@ -9,6 +9,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <sys/stat.h>
 
 #ifdef __MINGW32__
 #else
@@ -91,10 +94,11 @@ char** rbs_parse_args(const char* cmd, const char* arg) {
 int outpipe[2];
 pid_t pid;
 
-CMBOOL rbs_start_process(const char* cmd, char** args) {
+CMBOOL rbs_start_process(const char* cmd, char** args, const char* tmpdir) {
 	pipe(outpipe);
 	pid = fork();
 	if(pid == 0) {
+		chdir(tmpdir);
 		dup2(outpipe[1], 1);
 		dup2(outpipe[1], 2);
 		close(outpipe[0]);
@@ -140,18 +144,127 @@ char* rbs_get_program(const char* section, const char* cmd) {
 			return cm_strcat(prefix, "gcc");
 		} else if(strcmp(cmd, "LD") == 0) {
 			return cm_strcat(prefix, "ld");
+		} else if(strcmp(cmd, "AS") == 0) {
+			return cm_strcat(prefix, "as");
+		} else if(strcmp(cmd, "CXX") == 0) {
+			return cm_strcat(prefix, "g++");
+		} else if(strcmp(cmd, "AR") == 0) {
+			return cm_strcat(prefix, "ar");
 		}
 	}
 	return cm_strdup("");
 }
 
+char** rbs_translate_args(const char* section, const char* cmd, char** args, int sock, char* tmpdir, char** output) {
+	int i;
+	char* type = rbs_config_get(section, "type");
+	char** r = malloc(sizeof(*r));
+	r[0] = NULL;
+	rbs_push(&r, args[0]);
+	for(i = 1; args[i] != NULL; i++) {
+		if(strcmp(type, "gnu") == 0 && (strcmp(cmd, "CC") == 0 || strcmp(cmd, "CXX") == 0)) {
+			if(strcmp(args[i], "-o") == 0 || strcmp(args[i], "-I") == 0 || strcmp(args[i], "-L") == 0) {
+				if(strcmp(args[i], "-o") == 0) {
+					*output = cm_strdup(args[i + 1]);
+				}
+				rbs_push(&r, args[i]);
+				rbs_push(&r, args[i + 1]);
+				i++;
+			} else if(strcmp(args[i], "-c") == 0 || strcmp(args[i], "-fPIC") == 0 || strcmp(args[i], "-shared") == 0) {
+				rbs_push(&r, args[i]);
+			} else if(args[i][0] != '-') {
+				/* file input */
+				char* l;
+				char* path;
+				unsigned long bytes;
+				unsigned char buffer[512];
+				FILE* fout;
+				rbs_write(sock, "GIMME ", 6);
+				rbs_write(sock, args[i], strlen(args[i]));
+				rbs_write(sock, "\n", 1);
+				l = rbs_readline(sock);
+				if(l == NULL) {
+					rbs_stack_free(r);
+					return NULL;
+				}
+				bytes = atol(l);
+				if(bytes == 0) {
+					rbs_stack_free(r);
+					return NULL;
+				}
+				path = cm_strcat3(tmpdir, "/", args[i]);
+				fout = fopen(path, "wb");
+				while(bytes != 0) {
+					int rb = rbs_read(sock, buffer, bytes < 512 ? bytes : 512);
+					fwrite(buffer, 1, rb, fout);
+					bytes -= rb;
+				}
+				fclose(fout);
+				free(path);
+				rbs_push(&r, args[i]);
+			}
+		}
+	}
+	return r;
+}
+
+char* rbs_create_tmpdir(void) {
+#ifdef __MINGW32__
+#else
+	char* path = malloc(512);
+	sprintf(path, "/tmp/%lu-%lu", (unsigned long)time(NULL), (unsigned long)getpid());
+	mkdir(path, 0700);
+	return path;
+#endif
+}
+
 CMBOOL rbs_task(int sock, const char* section, const char* cmd, const char* arg) {
+	char* tmpdir = rbs_create_tmpdir();
 	char* program = rbs_get_program(section, cmd);
 	char** args = rbs_parse_args(program, arg);
-	CMBOOL status = rbs_start_process(program, args);
+	char* output = NULL;
+	char** translate_args = rbs_translate_args(section, cmd, args, sock, tmpdir, &output);
+	CMBOOL status;
+	if(translate_args == NULL) {
+		free(tmpdir);
+		rbs_stack_free(args);
+		free(program);
+		return CMFALSE;
+	}
+	status = rbs_start_process(program, translate_args, tmpdir);
+	rbs_stack_free(translate_args);
 	rbs_stack_free(args);
 	if(!status) return CMFALSE;
 	rbs_write(sock, "SUCCESS\n", 8);
 	free(program);
-	return rbs_wait_process(sock);
+	status = rbs_wait_process(sock);
+	if(status) {
+		char* outp = cm_strcat3(tmpdir, "/", output);
+		struct stat s;
+		free(tmpdir);
+		if(stat(outp, &s) == 0 && s.st_size > 0) {
+			char msg[128];
+			unsigned long bytes = s.st_size;
+			unsigned char data[512];
+			FILE* fin = fopen(outp, "rb");
+			sprintf(msg, "%lu", bytes);
+			rbs_write(sock, "FILE ", 5);
+			rbs_write(sock, output, strlen(output));
+			rbs_write(sock, " ", 1);
+			rbs_write(sock, msg, strlen(msg));
+			rbs_write(sock, "\n", 1);
+			while(bytes != 0) {
+				int rd = fread(data, 1, bytes < 512 ? bytes : 512, fin);
+				rbs_write(sock, data, rd);
+				bytes -= rd;
+			}
+			fclose(fin);
+			return CMTRUE;
+		} else {
+			return CMFALSE;
+		}
+	} else {
+		free(tmpdir);
+		return CMFALSE;
+	}
 }
