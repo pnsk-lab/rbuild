@@ -247,11 +247,14 @@ CMBOOL rbs_task(int sock, const char* section, const char* cmd, const char* arg)
 			unsigned long bytes = s.st_size;
 			unsigned char data[512];
 			FILE* fin = fopen(outp, "rb");
-			sprintf(msg, "%lu", bytes);
 			rbs_write(sock, "FILE ", 5);
-			rbs_write(sock, output, strlen(output));
-			rbs_write(sock, " ", 1);
+			sprintf(msg, "%lu", (unsigned long)s.st_mode);
 			rbs_write(sock, msg, strlen(msg));
+			rbs_write(sock, " ", 1);
+			sprintf(msg, "%lu", (unsigned long)bytes);
+			rbs_write(sock, msg, strlen(msg));
+			rbs_write(sock, " ", 1);
+			rbs_write(sock, output, strlen(output));
 			rbs_write(sock, "\n", 1);
 			while(bytes != 0) {
 				int rd = fread(data, 1, bytes < 512 ? bytes : 512, fin);
