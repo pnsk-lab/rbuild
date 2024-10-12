@@ -1,0 +1,8 @@
+# $Id$
+
+CC = cc
+AR = ar
+CFLAGS = -I $(PWD)/Common -DHAS_PLAIN_AUTH -DHAS_NONE_AUTH -DHAS_CRYPT_AUTH
+LDFLAGS =
+LIBS = -lcrypt
+EXEC =
